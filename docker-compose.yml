@@ -1,0 +1,37 @@
+version: "3.9"
+services: 
+  # declare our web service
+  web:
+    # build using haproxy/website/Dockerfile
+    build: ./website
+    # declare port binding. Equivalent of "-p 90:90"
+    ports:
+      - 90:90
+    # set some env variables
+    environment:
+      - ASPNETCORE_URLS=http://+:90
+      - ASPNETCORE_ENVIRONEMENT=Development
+  
+  # this is our logging stacj
+  rsyslog:
+    # build using haproxy/rsyslog/Dockerfile
+    build: ./rsyslog
+    # mount local logs directory to actually be able to read the log file
+    volumes: 
+      - "./logs:/var/log/haproxy"
+    # expose port 514/udp
+    ports:
+      - 514:514/udp
+    cap_add:
+      - SYSLOG
+  
+  # finally haproxy
+  haproxy:
+    depends_on:
+      - web
+      - rsyslog
+    # build using haproxy/haproxy/Dockerfile
+    build: ./haproxy
+    # exposer port 80/tcp
+    ports:
+      - 80:80
